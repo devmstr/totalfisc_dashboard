@@ -80,12 +80,14 @@ function RootComponent() {
             activePage={activePage}
             isScrolled={isScrolled}
           />
-          <ScrollArea
-            className="flex-1 w-full"
-            viewportProps={{ onScroll: handleScroll }}
-          >
-            <Outlet />
-          </ScrollArea>
+          <div className="flex-1 overflow-hidden">
+            <ScrollArea
+              className="h-full w-full"
+              viewportProps={{ onScroll: handleScroll }}
+            >
+              <Outlet />
+            </ScrollArea>
+          </div>
         </main>
         {/* <TanStackRouterDevtools /> */}
       </div>

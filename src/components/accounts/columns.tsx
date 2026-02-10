@@ -5,19 +5,26 @@ import { Icons } from '../Icons'
 import { DataTableColumnHeader } from '../shared/data-table/data-table-column-header'
 
 export type AccountEntry = {
-  id: number
+  id: string
   accountNumber: string
   label: string
-  class: number
-  type: string
-  balance: number
+  class: string | number
+  type?: string
+  balance?: number
+}
+
+const getTypeFromClass = (cls: string | number) => {
+  const c = Number(cls)
+  if (c >= 1 && c <= 5) return 'balance_sheet'
+  if (c >= 6 && c <= 7) return 'income_statement'
+  return 'other'
 }
 
 export const getColumns = (
   t: any,
   formatCurrency: (amount: number) => string,
-  onEdit?: (account: AccountEntry) => void,
-  onDelete?: (id: number) => void
+  onEdit: (account: AccountEntry) => void,
+  onDelete: (id: string) => void
 ): ColumnDef<AccountEntry>[] => [
     {
       accessorKey: 'accountNumber',
@@ -43,7 +50,12 @@ export const getColumns = (
       ),
       meta: {
         title: t('accounts.label')
-      }
+      },
+      cell: ({ row }) => (
+        <div className="max-w-[300px] truncate" title={row.getValue('label')}>
+          {row.getValue('label')}
+        </div>
+      )
     },
     {
       accessorKey: 'class',
@@ -60,7 +72,7 @@ export const getColumns = (
       )
     },
     {
-      accessorKey: 'type',
+      id: 'type',
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t('accounts.type')} />
       ),
@@ -68,8 +80,8 @@ export const getColumns = (
         title: t('accounts.type')
       },
       cell: ({ row }) => {
-        const type = row.getValue('type') as string
-        return <Badge variant="outline">{t(`accounts.types.${type}`)}</Badge>
+        const type = getTypeFromClass(row.getValue('class'))
+        return <Badge variant="outline">{t(`accounts.types.${type}`) || type}</Badge>
       }
     },
     {
@@ -86,7 +98,7 @@ export const getColumns = (
       },
       cell: ({ row }) => (
         <div className="text-end font-bold ltr:font-poppins rtl:font-somar">
-          {formatCurrency(row.getValue('balance'))}
+          {formatCurrency(row.original.balance || 0)}
         </div>
       )
     },

@@ -6,6 +6,13 @@ export interface Tier {
   code: string
   name: string
   type: 'client' | 'supplier' | 'both'
+  nif?: string
+  nis?: string
+  rc?: string
+  phone?: string
+  email?: string
+  address?: string
+  balance?: number
 }
 
 export const useTiers = (type?: 'client' | 'supplier' | 'both') => {

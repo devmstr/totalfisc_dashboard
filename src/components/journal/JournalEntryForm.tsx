@@ -224,7 +224,7 @@ export const JournalEntryForm = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={dir}
-        className="w-full max-w-5xl flex flex-col p-0 gap-0"
+        className="w-full max-w-3xl flex flex-col p-0 gap-0"
       >
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="text-start">
@@ -244,21 +244,22 @@ export const JournalEntryForm = ({
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex flex-col overflow-hidden"
           >
-            <div className="flex flex-col md:flex-row w-full gap-4 p-6 bg-muted/20 border-b">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 bg-muted/20 border-b">
               <FormField
                 control={form.control}
                 name="journalCode"
                 render={({ field }) => (
-                  <FormItem className="w-full md:w-35 shrink-0">
+                  <FormItem className="w-full">
                     <FormLabel>{t('journal.form.fields.journal')}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue
                             placeholder={t('journal.form.placeholders.select')}
+                            className="text-ellipsis"
                           />
                         </SelectTrigger>
                       </FormControl>
@@ -279,7 +280,7 @@ export const JournalEntryForm = ({
                 control={form.control}
                 name="date"
                 render={({ field }) => (
-                  <FormItem className="w-full md:w-60 shrink-0">
+                  <FormItem>
                     <FormLabel>{t('journal.form.fields.date')}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -318,7 +319,7 @@ export const JournalEntryForm = ({
                 control={form.control}
                 name="reference"
                 render={({ field }) => (
-                  <div className="flex-1 md:w-60">
+                  <FormItem>
                     <FormLabel>{t('journal.form.fields.reference')}</FormLabel>
                     <FormControl>
                       <Input
@@ -327,7 +328,7 @@ export const JournalEntryForm = ({
                       />
                     </FormControl>
                     <FormMessage />
-                  </div>
+                  </FormItem>
                 )}
               />
 
@@ -335,7 +336,7 @@ export const JournalEntryForm = ({
                 control={form.control}
                 name="description"
                 render={({ field }) => (
-                  <FormItem className="flex-[1.5] min-w-50">
+                  <FormItem>
                     <FormLabel>
                       {t('journal.form.fields.description')}
                     </FormLabel>

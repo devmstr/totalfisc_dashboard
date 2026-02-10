@@ -5,14 +5,12 @@ import { Icons } from '@/components/Icons'
 import { DataTableColumnHeader } from '@/components/shared/data-table/data-table-column-header'
 
 export type PurchaseInvoice = {
-  id: number
-  invoiceNumber: string
+  id: string
+  number: string
   date: string
   dueDate: string
-  supplier: string
-  amountHT: number
-  vat: number
-  amountTTC: number
+  supplierName?: string
+  totalAmount: number
   status: string
 }
 
@@ -20,11 +18,11 @@ export const getColumns = (
   t: any,
   formatCurrency: (amount: number) => string,
   getStatusColor: (status: string) => string,
-  onEdit?: (invoice: PurchaseInvoice) => void,
-  onDelete?: (id: number) => void
+  onEdit: (invoice: PurchaseInvoice) => void,
+  onDelete: (id: string) => void
 ): ColumnDef<PurchaseInvoice>[] => [
     {
-      accessorKey: 'invoiceNumber',
+      accessorKey: 'number',
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -35,17 +33,22 @@ export const getColumns = (
         title: t('purchases.invoice_number')
       },
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('invoiceNumber')}</div>
+        <div className="font-medium">{row.getValue('number')}</div>
       )
     },
     {
-      accessorKey: 'supplier',
+      accessorKey: 'supplierName',
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t('purchases.supplier')} />
       ),
       meta: {
         title: t('purchases.supplier')
-      }
+      },
+      cell: ({ row }) => (
+        <div className="max-w-[200px] truncate" title={row.getValue('supplierName')}>
+          {row.getValue('supplierName') || t('common.unknown')}
+        </div>
+      )
     },
     {
       accessorKey: 'date',
@@ -56,7 +59,7 @@ export const getColumns = (
         title: t('purchases.date')
       },
       cell: ({ row }) => (
-        <div className="text-muted-foreground">{row.getValue('date')}</div>
+        <div className="text-muted-foreground">{new Date(row.getValue('date')).toLocaleDateString()}</div>
       )
     },
     {
@@ -68,47 +71,11 @@ export const getColumns = (
         title: t('purchases.due_date')
       },
       cell: ({ row }) => (
-        <div className="text-muted-foreground">{row.getValue('dueDate')}</div>
+        <div className="text-muted-foreground">{new Date(row.getValue('dueDate')).toLocaleDateString()}</div>
       )
     },
     {
-      accessorKey: 'amountHT',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('purchases.amount_ht')}
-          className="justify-end"
-        />
-      ),
-      meta: {
-        title: t('purchases.amount_ht')
-      },
-      cell: ({ row }) => (
-        <div className="text-end ltr:font-poppins rtl:font-somar">
-          {formatCurrency(row.getValue('amountHT'))}
-        </div>
-      )
-    },
-    {
-      accessorKey: 'vat',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t('purchases.vat')}
-          className="justify-end"
-        />
-      ),
-      meta: {
-        title: t('purchases.vat')
-      },
-      cell: ({ row }) => (
-        <div className="text-end ltr:font-poppins rtl:font-somar">
-          {formatCurrency(row.getValue('vat'))}
-        </div>
-      )
-    },
-    {
-      accessorKey: 'amountTTC',
+      accessorKey: 'totalAmount',
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -121,7 +88,7 @@ export const getColumns = (
       },
       cell: ({ row }) => (
         <div className="text-end font-bold ltr:font-poppins rtl:font-somar">
-          {formatCurrency(row.getValue('amountTTC'))}
+          {formatCurrency(row.getValue('totalAmount'))}
         </div>
       )
     },
@@ -138,11 +105,11 @@ export const getColumns = (
         title: t('purchases.status')
       },
       cell: ({ row }) => {
-        const status = row.getValue('status') as string
+        const status = (row.getValue('status') as string).toLowerCase()
         return (
           <div className="flex justify-center">
             <Badge variant="default" className={getStatusColor(status)}>
-              {t(`purchases.${status}`)}
+              {t(`purchases.${status}`) || status}
             </Badge>
           </div>
         )

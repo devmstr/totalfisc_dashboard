@@ -29,6 +29,8 @@ import { PurchaseForm } from '../components/purchases/forms/purchase-form'
 import { QuoteForm } from '../components/sales/forms/quote-form'
 import { JournalEntryForm } from '../components/journal/JournalEntryForm'
 
+import { useFiscalYears } from '../hooks/use-fiscal-years'
+
 export const Dashboard = () => {
   const { t } = useTranslation()
   const { language } = useI18n()
@@ -38,11 +40,16 @@ export const Dashboard = () => {
   const [isQuoteDialogOpen, setIsQuoteDialogOpen] = React.useState(false)
   const [isJournalDialogOpen, setIsJournalDialogOpen] = React.useState(false)
 
-  // For MVP, we use a placeholder or derived fiscal year ID
-  const fiscalYearId = 'current'
+  const { data: fiscalYears, isLoading: isFiscalYearsLoading } = useFiscalYears()
 
-  const { data: transactions, isLoading: isLoadingTransactions } =
+  // Derived fiscalYearId
+  const fiscalYearId =
+    (fiscalYears?.find((fy) => fy.status === 'Open') || fiscalYears?.[0])?.id || ''
+
+  const { data: transactions, isLoading: isTransactionsLoading } =
     useJournalEntries(fiscalYearId, 5)
+
+  const isLoading = isFiscalYearsLoading || isTransactionsLoading
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat(language === 'ar' ? 'ar-DZ' : 'fr-DZ', {
@@ -51,8 +58,6 @@ export const Dashboard = () => {
       minimumFractionDigits: 2
     }).format(amount)
   }
-
-  const isLoading = isLoadingTransactions
 
   return (
     <div className="p-6 space-y-8 animate-in fade-in duration-500">
@@ -365,7 +370,7 @@ export const Dashboard = () => {
                           {item.description}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {new Date(item.entryDate).toLocaleDateString(
+                          {new Date(item.date).toLocaleDateString(
                             language === 'ar' ? 'ar-DZ' : 'fr-DZ'
                           )}
                         </TableCell>

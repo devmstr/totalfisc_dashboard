@@ -12,6 +12,16 @@ import {
   SelectTrigger,
   SelectValue
 } from '../components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { DataTable } from '../components/shared/data-table/data-table'
 import { getColumns } from '../components/transactions/columns'
 import { JournalEntryForm } from '../components/journal/JournalEntryForm'
@@ -28,8 +38,12 @@ export const Transactions = () => {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
   const [selectedFiscalYearId, setSelectedFiscalYearId] = useState<string>('')
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null)
+  const [isPostDialogOpen, setIsPostDialogOpen] = useState(false)
+  const [entryToPost, setEntryToPost] = useState<string | null>(null)
 
-  const { data: fiscalYears } = useFiscalYears()
+  const { data: fiscalYears, isLoading: isFiscalYearsLoading } = useFiscalYears()
 
   // Derived fiscalYearId: uses user selection or defaults to open/first year
   const fiscalYearId =
@@ -37,7 +51,9 @@ export const Transactions = () => {
     (fiscalYears?.find((fy) => fy.status === 'Open') || fiscalYears?.[0])?.id ||
     ''
 
-  const { data: entries, isLoading } = useJournalEntries(fiscalYearId)
+  const { data: entries, isLoading: isEntriesLoading } = useJournalEntries(fiscalYearId)
+
+  const isLoading = isFiscalYearsLoading || isEntriesLoading
   const { mutate: deleteEntry } = useDeleteJournalEntry()
   const { mutate: postEntry } = usePostJournalEntry()
 
@@ -47,18 +63,28 @@ export const Transactions = () => {
   }
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this entry?')) {
-      deleteEntry(id)
+    setEntryToDelete(id)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (entryToDelete) {
+      deleteEntry(entryToDelete)
+      setIsDeleteDialogOpen(false)
+      setEntryToDelete(null)
     }
   }
 
   const handlePost = (id: string) => {
-    if (
-      window.confirm(
-        'Are you sure you want to post this entry? This action is irreversible.'
-      )
-    ) {
-      postEntry(id)
+    setEntryToPost(id)
+    setIsPostDialogOpen(true)
+  }
+
+  const confirmPost = () => {
+    if (entryToPost) {
+      postEntry(entryToPost)
+      setIsPostDialogOpen(false)
+      setEntryToPost(null)
     }
   }
 
@@ -96,7 +122,7 @@ export const Transactions = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="min-w-40">
+          <div className="">
             <Select
               value={fiscalYearId}
               onValueChange={setSelectedFiscalYearId}
@@ -124,6 +150,40 @@ export const Transactions = () => {
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the journal entry and remove your data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to post this entry? This action is irreversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPost} className="bg-emerald-600 text-white hover:bg-emerald-700">
+              Post Entry
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Stats Cards */}
       <div className="flex flex-wrap gap-4">

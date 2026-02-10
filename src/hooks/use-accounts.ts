@@ -15,7 +15,7 @@ export const useAccounts = () => {
   return useQuery<AccountDto[]>({
     queryKey: ['accounts'],
     queryFn: async () => {
-      const response = await apiClient.get('/accounts')
+      const response = await apiClient.get('/Accounts')
       return response.data
     }
   })

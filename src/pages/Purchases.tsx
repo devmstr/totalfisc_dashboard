@@ -19,10 +19,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { PurchaseForm } from '../components/purchases/forms/purchase-form'
 import { OrderForm } from '../components/purchases/forms/order-form'
 import { usePurchasesMutation } from '../hooks/use-purchases-mutation'
 import { useState } from 'react'
+import { usePurchaseInvoices } from '../hooks/use-purchases'
+import { useTiers } from '../hooks/use-tiers'
 
 export const Purchases = () => {
   const { t } = useTranslation()
@@ -30,7 +42,17 @@ export const Purchases = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false)
   const [editingPurchase, setEditingPurchase] = useState<any>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [purchaseToDelete, setPurchaseToDelete] = useState<string | null>(null)
   const { deleteInvoice } = usePurchasesMutation()
+
+  const { data: purchaseInvoices, isLoading } = usePurchaseInvoices()
+  const { data: suppliers } = useTiers('supplier')
+
+  const invoices = purchaseInvoices?.map(inv => ({
+    ...inv,
+    supplierName: suppliers?.find(s => s.id === inv.supplierId)?.name
+  })) || []
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat(language === 'ar' ? 'ar-DZ' : 'fr-DZ', {
@@ -40,51 +62,24 @@ export const Purchases = () => {
     }).format(amount)
   }
 
-  // Mock data
-  const invoices = [
-    {
-      id: 1,
-      invoiceNumber: 'FACH-2026-001',
-      date: '2026-02-01',
-      dueDate: '2026-03-01',
-      supplier: t('mock_data.suppliers.fournisseur_alpha'),
-      amountHT: 15000.0,
-      vat: 2850.0,
-      amountTTC: 17850.0,
-      status: 'paid'
-    },
-    {
-      id: 2,
-      invoiceNumber: 'FACH-2026-002',
-      date: '2026-02-03',
-      dueDate: '2026-03-03',
-      supplier: t('mock_data.suppliers.societe_beta'),
-      amountHT: 8500.0,
-      vat: 1615.0,
-      amountTTC: 10115.0,
-      status: 'unpaid'
-    },
-    {
-      id: 3,
-      invoiceNumber: 'FACH-2026-003',
-      date: '2026-02-05',
-      dueDate: '2026-03-05',
-      supplier: t('mock_data.suppliers.entreprise_gamma'),
-      amountHT: 3200.0,
-      vat: 608.0,
-      amountTTC: 3808.0,
-      status: 'partial'
-    }
-  ]
+  // Calculate stats
+  const totalPurchases = invoices.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)
+  const paidPurchases = invoices.filter(i => i.status.toLowerCase() === 'paid').reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)
+  const unpaidPurchases = invoices.filter(i => i.status.toLowerCase() === 'draft' || i.status.toLowerCase() === 'received').reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)
+  // Assuming 'partial' fits into unpaid or logic needs refinement, but using existing categories for now. 
+  // Backend statuses are Draft, Received, Paid. Let's map Received to Unpaid for stats.
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
         return 'bg-emerald-500'
       case 'unpaid':
+      case 'received':
         return 'bg-amber-500 text-white'
       case 'partial':
         return 'bg-blue-500'
+      case 'overdue':
+        return 'bg-red-500'
       default:
         return 'bg-gray-500'
     }
@@ -95,9 +90,16 @@ export const Purchases = () => {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) {
-      await deleteInvoice.mutateAsync(id.toString())
+  const handleDelete = (id: string) => {
+    setPurchaseToDelete(id)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (purchaseToDelete) {
+      await deleteInvoice.mutateAsync(purchaseToDelete)
+      setIsDeleteDialogOpen(false)
+      setPurchaseToDelete(null)
     }
   }
 
@@ -170,6 +172,23 @@ export const Purchases = () => {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the invoice and remove your data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="p-4 shadow-sm border-border overflow-hidden">
@@ -180,9 +199,9 @@ export const Purchases = () => {
               </p>
               <p
                 className="text-2xl font-bold mt-1 ltr:font-poppins rtl:font-somar truncate"
-                title={formatCurrency(31773)}
+                title={formatCurrency(totalPurchases)}
               >
-                {formatCurrency(31773)}
+                {formatCurrency(totalPurchases)}
               </p>
             </div>
             <Icons.ListOrdered className="h-8 w-8 text-primary opacity-50 shrink-0" />
@@ -197,9 +216,9 @@ export const Purchases = () => {
               </p>
               <p
                 className="text-2xl font-bold mt-1 ltr:font-poppins rtl:font-somar truncate"
-                title={formatCurrency(17850)}
+                title={formatCurrency(paidPurchases)}
               >
-                {formatCurrency(17850)}
+                {formatCurrency(paidPurchases)}
               </p>
             </div>
             <Icons.Plus className="h-8 w-8 text-emerald-500 opacity-50 bg-emerald-100 rounded-full p-1 shrink-0" />
@@ -214,9 +233,9 @@ export const Purchases = () => {
               </p>
               <p
                 className="text-2xl font-bold mt-1 ltr:font-poppins rtl:font-somar truncate"
-                title={formatCurrency(10115)}
+                title={formatCurrency(unpaidPurchases)}
               >
-                {formatCurrency(10115)}
+                {formatCurrency(unpaidPurchases)}
               </p>
             </div>
             <Icons.Banknote className="h-8 w-8 text-amber-500 opacity-50 shrink-0" />
@@ -231,9 +250,9 @@ export const Purchases = () => {
               </p>
               <p
                 className="text-2xl font-bold mt-1 ltr:font-poppins rtl:font-somar truncate"
-                title={formatCurrency(3808)}
+                title={formatCurrency(0)} /* Partial not tracked explicitly in status */
               >
-                {formatCurrency(3808)}
+                {formatCurrency(0)}
               </p>
             </div>
             <Icons.ChevronDown className="h-8 w-8 text-blue-500 opacity-50 shrink-0" />
@@ -273,15 +292,11 @@ export const Purchases = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('purchases.supplier')}</SelectItem>
-                <SelectItem value="sup1">
-                  {t('mock_data.suppliers.fournisseur_alpha')}
-                </SelectItem>
-                <SelectItem value="sup2">
-                  {t('mock_data.suppliers.societe_beta')}
-                </SelectItem>
-                <SelectItem value="sup3">
-                  {t('mock_data.suppliers.entreprise_gamma')}
-                </SelectItem>
+                {suppliers?.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -302,7 +317,8 @@ export const Purchases = () => {
         <DataTable
           columns={getColumns(t, formatCurrency, getStatusColor, handleEdit, handleDelete)}
           data={invoices}
-          searchKey="invoiceNumber"
+          searchKey="number"
+          isLoading={isLoading}
         />
       </Card>
     </div>

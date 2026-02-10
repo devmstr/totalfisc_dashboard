@@ -4,7 +4,7 @@ import { Icons } from '../components/Icons'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
 import { DataTable } from '../components/shared/data-table/data-table'
-import { getColumns, type AccountEntry } from '../components/accounts/columns'
+import { getColumns } from '../components/accounts/columns'
 import {
   Dialog,
   DialogContent,
@@ -12,8 +12,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { AccountForm } from '../components/accounts/forms/account-form'
 import { useAccountsMutation } from '../hooks/use-accounts-mutation'
+import { useAccounts } from '../hooks/use-accounts'
 import { useState } from 'react'
 
 export const Accounts = () => {
@@ -21,6 +32,8 @@ export const Accounts = () => {
   const { language } = useI18n()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<any>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [accountToDelete, setAccountToDelete] = useState<string | null>(null)
   const { deleteAccount } = useAccountsMutation()
 
   const formatCurrency = (amount: number) => {
@@ -31,66 +44,23 @@ export const Accounts = () => {
     }).format(amount)
   }
 
-  // Mock data for demonstration
-  const accounts: AccountEntry[] = [
-    {
-      id: 1,
-      accountNumber: '101',
-      label: 'Capital social',
-      class: 1,
-      type: 'equity',
-      balance: 1000000
-    },
-    {
-      id: 2,
-      accountNumber: '411',
-      label: 'Clients',
-      class: 4,
-      type: 'asset',
-      balance: 150000
-    },
-    {
-      id: 3,
-      accountNumber: '401',
-      label: 'Fournisseurs',
-      class: 4,
-      type: 'liability',
-      balance: 80000
-    },
-    {
-      id: 4,
-      accountNumber: '512',
-      label: 'Banque',
-      class: 5,
-      type: 'asset',
-      balance: 50000
-    },
-    {
-      id: 5,
-      accountNumber: '600',
-      label: 'Achats de marchandises',
-      class: 6,
-      type: 'expense',
-      balance: 300000
-    },
-    {
-      id: 6,
-      accountNumber: '700',
-      label: 'Ventes de marchandises',
-      class: 7,
-      type: 'revenue',
-      balance: 500000
-    }
-  ]
+  const { data: accounts, isLoading } = useAccounts()
 
   const handleEdit = (account: any) => {
     setEditingAccount(account)
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce compte ?')) {
-      await deleteAccount.mutateAsync(id.toString())
+  const handleDelete = (id: string) => {
+    setAccountToDelete(id)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (accountToDelete) {
+      await deleteAccount.mutateAsync(accountToDelete)
+      setIsDeleteDialogOpen(false)
+      setAccountToDelete(null)
     }
   }
 
@@ -139,12 +109,30 @@ export const Accounts = () => {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the account and remove your data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Accounts Table */}
       <Card className="p-4 shadow-sm border-border">
         <DataTable
           columns={getColumns(t, formatCurrency, handleEdit, handleDelete)}
-          data={accounts}
+          data={accounts || []}
           searchKey="label"
+          isLoading={isLoading}
         />
       </Card>
     </div>

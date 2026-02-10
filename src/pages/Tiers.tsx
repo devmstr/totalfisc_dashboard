@@ -19,9 +19,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { TierForm } from '../components/tiers/forms/tier-form'
 import { useTiersMutation } from '../hooks/use-tiers-mutation'
 import { useState } from 'react'
+
+import { useTiers } from '../hooks/use-tiers'
 
 export const Tiers = () => {
   const { t } = useTranslation()
@@ -29,7 +41,12 @@ export const Tiers = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [initialType, setInitialType] = useState<'client' | 'supplier'>('client')
   const [editingTier, setEditingTier] = useState<any>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [tierToDelete, setTierToDelete] = useState<any>(null)
   const { deleteTier } = useTiersMutation()
+
+  // Fetch all tiers
+  const { data: tiers, isLoading } = useTiers()
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat(language === 'ar' ? 'ar-DZ' : 'fr-DZ', {
@@ -39,45 +56,10 @@ export const Tiers = () => {
     }).format(amount)
   }
 
-  // Mock data
-  const thirdParties = [
-    {
-      id: 1,
-      code: 'CLI-001',
-      name: t('mock_data.clients.client_abc'),
-      type: 'client',
-      nif: '099123456789012',
-      nis: '123456789012345',
-      rc: '16B0123456',
-      phone: '+213 21 12 34 56',
-      email: 'contact@clientabc.dz',
-      balance: 11900.0
-    },
-    {
-      id: 2,
-      code: 'FOU-001',
-      name: t('mock_data.suppliers.fournisseur_alpha'),
-      type: 'supplier',
-      nif: '099987654321098',
-      nis: '987654321098765',
-      rc: '16A9876543',
-      phone: '+213 21 98 76 54',
-      email: 'info@alpha.dz',
-      balance: -17850.0
-    },
-    {
-      id: 3,
-      code: 'CLI-002',
-      name: t('mock_data.clients.entreprise_xyz'),
-      type: 'client',
-      nif: '099555666777888',
-      nis: '555666777888999',
-      rc: '16B5556667',
-      phone: '+213 21 55 66 77',
-      email: 'contact@xyz.dz',
-      balance: 29750.0
-    }
-  ]
+  // Calculate stats
+  const clientsCount = tiers?.filter(t => t.type === 'client').length || 0
+  const suppliersCount = tiers?.filter(t => t.type === 'supplier').length || 0
+  const totalBalance = tiers?.reduce((acc, curr) => acc + (curr.balance || 0), 0) || 0
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -98,9 +80,16 @@ export const Tiers = () => {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (tier: any) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${tier.name} ?`)) {
-      await deleteTier.mutateAsync(tier.id.toString())
+  const handleDelete = (tier: any) => {
+    setTierToDelete(tier)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (tierToDelete) {
+      await deleteTier.mutateAsync(tierToDelete.id)
+      setIsDeleteDialogOpen(false)
+      setTierToDelete(null)
     }
   }
 
@@ -169,6 +158,23 @@ export const Tiers = () => {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete {tierToDelete?.name} and remove their data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="p-4 shadow-sm border-border overflow-hidden">
@@ -177,7 +183,7 @@ export const Tiers = () => {
               <p className="text-sm font-medium text-muted-foreground truncate">
                 {t('tiers.total_clients')}
               </p>
-              <p className="text-2xl font-bold mt-1 truncate">125</p>
+              <p className="text-2xl font-bold mt-1 truncate">{clientsCount}</p>
             </div>
             <Icons.Users className="h-8 w-8 text-blue-500 opacity-50 shrink-0" />
           </div>
@@ -189,7 +195,7 @@ export const Tiers = () => {
               <p className="text-sm font-medium text-muted-foreground truncate">
                 {t('tiers.total_suppliers')}
               </p>
-              <p className="text-2xl font-bold mt-1 truncate">78</p>
+              <p className="text-2xl font-bold mt-1 truncate">{suppliersCount}</p>
             </div>
             <Icons.ListOrdered className="h-8 w-8 text-purple-500 opacity-50 shrink-0" />
           </div>
@@ -203,9 +209,9 @@ export const Tiers = () => {
               </p>
               <p
                 className="text-2xl font-bold mt-1 ltr:font-poppins rtl:font-somar truncate"
-                title={formatCurrency(125545)}
+                title={formatCurrency(totalBalance)}
               >
-                {formatCurrency(125545)}
+                {formatCurrency(totalBalance)}
               </p>
             </div>
             <Icons.Banknote className="h-8 w-8 text-emerald-500 opacity-50 shrink-0" />
@@ -248,8 +254,9 @@ export const Tiers = () => {
       <Card className="p-4 shadow-sm border-border">
         <DataTable
           columns={getColumns(t, formatCurrency, getTypeColor, handleEdit, handleDelete)}
-          data={thirdParties}
+          data={tiers || []}
           searchKey="name"
+          isLoading={isLoading}
         />
       </Card>
     </div>

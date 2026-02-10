@@ -19,10 +19,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { SaleForm } from '../components/sales/forms/sale-form'
 import { QuoteForm } from '../components/sales/forms/quote-form'
 import { useSalesMutation } from '../hooks/use-sales-mutation'
 import { useState } from 'react'
+
+import { useSalesInvoices } from '../hooks/use-sales'
+import { useTiers } from '../hooks/use-tiers'
 
 export const Sales = () => {
   const { t } = useTranslation()
@@ -30,7 +43,17 @@ export const Sales = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false)
   const [editingSale, setEditingSale] = useState<any>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [saleToDelete, setSaleToDelete] = useState<string | null>(null)
   const { deleteInvoice } = useSalesMutation()
+
+  const { data: salesInvoices, isLoading } = useSalesInvoices()
+  const { data: clients } = useTiers('client')
+
+  const invoices = salesInvoices?.map(inv => ({
+    ...inv,
+    clientName: clients?.find(c => c.id === inv.clientId)?.name
+  })) || []
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat(language === 'ar' ? 'ar-DZ' : 'fr-DZ', {
@@ -40,42 +63,11 @@ export const Sales = () => {
     }).format(amount)
   }
 
-  // Mock data
-  const invoices = [
-    {
-      id: 1,
-      invoiceNumber: 'FAC-2026-001',
-      date: '2026-02-01',
-      dueDate: '2026-03-01',
-      client: t('mock_data.clients.client_abc'),
-      amountHT: 10000.0,
-      vat: 1900.0,
-      amountTTC: 11900.0,
-      status: 'paid'
-    },
-    {
-      id: 2,
-      invoiceNumber: 'FAC-2026-002',
-      date: '2026-02-03',
-      dueDate: '2026-03-03',
-      client: t('mock_data.clients.entreprise_xyz'),
-      amountHT: 25000.0,
-      vat: 4750.0,
-      amountTTC: 29750.0,
-      status: 'unpaid'
-    },
-    {
-      id: 3,
-      invoiceNumber: 'FAC-2026-003',
-      date: '2026-02-05',
-      dueDate: '2026-01-15',
-      client: t('mock_data.clients.societe_def'),
-      amountHT: 5000.0,
-      vat: 950.0,
-      amountTTC: 5950.0,
-      status: 'overdue'
-    }
-  ]
+  // Calculate stats
+  const totalSales = invoices.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)
+  const paidSales = invoices.filter(i => i.status.toLowerCase() === 'paid').reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)
+  const unpaidSales = invoices.filter(i => i.status.toLowerCase() === 'draft' || i.status.toLowerCase() === 'sent').reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)
+  const overdueSales = invoices.filter(i => i.status.toLowerCase() === 'overdue').reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -97,9 +89,16 @@ export const Sales = () => {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) {
-      await deleteInvoice.mutateAsync(id.toString())
+  const handleDelete = (id: string) => {
+    setSaleToDelete(id)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (saleToDelete) {
+      await deleteInvoice.mutateAsync(saleToDelete)
+      setIsDeleteDialogOpen(false)
+      setSaleToDelete(null)
     }
   }
 
@@ -170,6 +169,23 @@ export const Sales = () => {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the invoice and remove your data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="p-4 shadow-sm border-border overflow-hidden">
@@ -180,9 +196,9 @@ export const Sales = () => {
               </p>
               <p
                 className="text-2xl font-bold mt-1 ltr:font-poppins rtl:font-somar truncate"
-                title={formatCurrency(125545)}
+                title={formatCurrency(totalSales)}
               >
-                {formatCurrency(125545)}
+                {formatCurrency(totalSales)}
               </p>
             </div>
             <Icons.ShoppingCart className="h-8 w-8 text-primary opacity-50 shrink-0" />
@@ -197,9 +213,9 @@ export const Sales = () => {
               </p>
               <p
                 className="text-2xl font-bold mt-1 ltr:font-poppins rtl:font-somar truncate"
-                title={formatCurrency(11900)}
+                title={formatCurrency(paidSales)}
               >
-                {formatCurrency(11900)}
+                {formatCurrency(paidSales)}
               </p>
             </div>
             <Icons.Plus className="h-8 w-8 text-emerald-500 opacity-50 bg-emerald-100 rounded-full p-1 shrink-0" />
@@ -214,9 +230,9 @@ export const Sales = () => {
               </p>
               <p
                 className="text-2xl font-bold mt-1 ltr:font-poppins rtl:font-somar truncate"
-                title={formatCurrency(29750)}
+                title={formatCurrency(unpaidSales)}
               >
-                {formatCurrency(29750)}
+                {formatCurrency(unpaidSales)}
               </p>
             </div>
             <Icons.Banknote className="h-8 w-8 text-amber-500 opacity-50 shrink-0" />
@@ -231,9 +247,9 @@ export const Sales = () => {
               </p>
               <p
                 className="text-2xl font-bold mt-1 ltr:font-poppins rtl:font-somar truncate"
-                title={formatCurrency(5950)}
+                title={formatCurrency(overdueSales)}
               >
-                {formatCurrency(5950)}
+                {formatCurrency(overdueSales)}
               </p>
             </div>
             <Icons.ChevronDown className="h-8 w-8 text-red-500 opacity-50 shrink-0" />
@@ -272,15 +288,11 @@ export const Sales = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('sales.client')}</SelectItem>
-                <SelectItem value="cli1">
-                  {t('mock_data.clients.client_abc')}
-                </SelectItem>
-                <SelectItem value="cli2">
-                  {t('mock_data.clients.entreprise_xyz')}
-                </SelectItem>
-                <SelectItem value="cli3">
-                  {t('mock_data.clients.societe_def')}
-                </SelectItem>
+                {clients?.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -301,7 +313,8 @@ export const Sales = () => {
         <DataTable
           columns={getColumns(t, formatCurrency, getStatusColor, handleEdit, handleDelete)}
           data={invoices}
-          searchKey="invoiceNumber"
+          searchKey="number"
+          isLoading={isLoading}
         />
       </Card>
     </div>

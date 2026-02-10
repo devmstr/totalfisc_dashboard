@@ -6,16 +6,16 @@ import { DataTableColumnHeader } from '../shared/data-table/data-table-column-he
 import { cn } from '@/lib/utils'
 
 export type ThirdParty = {
-  id: number
+  id: string
   code: string
   name: string
   type: string
-  nif: string
-  nis: string
-  rc: string
-  phone: string
-  email: string
-  balance: number
+  nif?: string
+  nis?: string
+  rc?: string
+  phone?: string
+  email?: string
+  balance?: number
 }
 
 export const getColumns = (
@@ -42,7 +42,12 @@ export const getColumns = (
       ),
       meta: {
         title: t('tiers.name')
-      }
+      },
+      cell: ({ row }) => (
+        <div className="max-w-[250px] truncate" title={row.getValue('name')}>
+          {row.getValue('name')}
+        </div>
+      )
     },
     {
       accessorKey: 'type',
@@ -56,7 +61,7 @@ export const getColumns = (
         const type = row.getValue('type') as string
         return (
           <Badge variant="default" className={getTypeColor(type)}>
-            {t(`tiers.${type}`)}
+            {t(`tiers.${type}`) || type}
           </Badge>
         )
       }
@@ -86,7 +91,7 @@ export const getColumns = (
         title: t('tiers.balance')
       },
       cell: ({ row }) => {
-        const balance = row.getValue('balance') as number
+        const balance = (row.getValue('balance') || 0) as number
         return (
           <div
             className={cn(

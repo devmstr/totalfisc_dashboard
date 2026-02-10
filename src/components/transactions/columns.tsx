@@ -6,8 +6,7 @@ import { DataTableColumnHeader } from '../shared/data-table/data-table-column-he
 
 export type TransactionEntry = {
   id: string
-  entryNumber: string
-  entryDate: string
+  date: string
   journalCode: string
   reference: string
   description: string
@@ -20,12 +19,12 @@ export const getColumns = (
   t: any,
   formatCurrency: (amount: number) => string,
   getStatusColor: (status: string) => string,
-  onEdit?: (entry: TransactionEntry) => void,
-  onDelete?: (id: string) => void,
-  onPost?: (id: string) => void
+  onEdit: (entry: TransactionEntry) => void,
+  onDelete: (id: string) => void,
+  onPost: (id: string) => void
 ): ColumnDef<TransactionEntry>[] => [
     {
-      accessorKey: 'entryNumber',
+      accessorKey: 'id',
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -36,11 +35,13 @@ export const getColumns = (
         title: t('transactions.entry_number')
       },
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('entryNumber')}</div>
+        <div className="font-medium max-w-[100px] truncate" title={row.getValue('id')}>
+          {row.getValue('id')}
+        </div>
       )
     },
     {
-      accessorKey: 'entryDate',
+      accessorKey: 'date',
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -49,7 +50,10 @@ export const getColumns = (
       ),
       meta: {
         title: t('transactions.entry_date')
-      }
+      },
+      cell: ({ row }) => (
+        <div className="text-muted-foreground">{new Date(row.getValue('date')).toLocaleDateString()}</div>
+      )
     },
     {
       accessorKey: 'journalCode',
@@ -92,7 +96,12 @@ export const getColumns = (
       ),
       meta: {
         title: t('transactions.description')
-      }
+      },
+      cell: ({ row }) => (
+        <div className="max-w-[200px] truncate" title={row.getValue('description')}>
+          {row.getValue('description')}
+        </div>
+      )
     },
     {
       accessorKey: 'totalDebit',
@@ -143,14 +152,14 @@ export const getColumns = (
         title: t('transactions.status')
       },
       cell: ({ row }) => {
-        const status = row.getValue('status') as string
+        const status = (row.getValue('status') as string).toLowerCase()
         return (
           <div className="flex justify-center">
             <Badge
               variant={status === 'posted' ? 'default' : 'secondary'}
               className={getStatusColor(status)}
             >
-              {t(`transactions.${status}`)}
+              {t(`transactions.${status}`) || status}
             </Badge>
           </div>
         )

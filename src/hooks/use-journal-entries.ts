@@ -11,8 +11,7 @@ export interface JournalLineDto {
 
 export interface JournalEntryDto {
   id: string
-  entryNumber: string
-  entryDate: string
+  date: string
   journalCode: string
   reference: string
   description: string
@@ -27,7 +26,7 @@ export const useJournalEntries = (fiscalYearId: string, limit?: number) => {
   return useQuery<JournalEntryDto[]>({
     queryKey: ['journal-entries', fiscalYearId, limit],
     queryFn: async () => {
-      const response = await apiClient.get('/journalentries', {
+      const response = await apiClient.get('/JournalEntries', {
         params: { fiscalYearId, limit }
       })
       return response.data
