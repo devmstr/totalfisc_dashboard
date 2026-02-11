@@ -7,8 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  plan      String   @default("Free")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts         Account[]
+  fiscalYears      FiscalYear[]
+  tiers            Tier[]
+  journalEntries   JournalEntry[]
+  salesInvoices    SalesInvoice[]
+  purchaseInvoices PurchaseInvoice[]
+  salesQuotes      SalesQuote[]
+  purchaseOrders   PurchaseOrder[]
+  companySettings  CompanySettings[]
+}
+
 model Account {
   id            String   @id @default(uuid())
+  tenantId      String
   accountNumber String
   label         String
   isSummary     Boolean  @default(false)
@@ -17,11 +36,13 @@ model Account {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
   journalLines JournalLine[]
 }
 
 model FiscalYear {
   id        String   @id @default(uuid())
+  tenantId  String
   year      Int
   startDate DateTime
   endDate   DateTime
@@ -29,11 +50,13 @@ model FiscalYear {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant         Tenant         @relation(fields: [tenantId], references: [id])
   journalEntries JournalEntry[]
 }
 
 model Tier {
   id           String   @id @default(uuid())
+  tenantId     String
   name         String
   type         String   // 'client', 'supplier', 'both'
   taxId        String?
@@ -49,6 +72,7 @@ model Tier {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  tenant           Tenant            @relation(fields: [tenantId], references: [id])
   salesInvoices    SalesInvoice[]
   purchaseInvoices PurchaseInvoice[]
   salesQuotes      SalesQuote[]
@@ -58,6 +82,7 @@ model Tier {
 
 model JournalEntry {
   id           String   @id @default(uuid())
+  tenantId     String
   date         DateTime
   journalCode  String
   reference    String
@@ -67,6 +92,7 @@ model JournalEntry {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  tenant     Tenant        @relation(fields: [tenantId], references: [id])
   fiscalYear FiscalYear    @relation(fields: [fiscalYearId], references: [id])
   lines      JournalLine[]
 }
@@ -87,6 +113,7 @@ model JournalLine {
 
 model SalesInvoice {
   id          String   @id @default(uuid())
+  tenantId    String
   number      String
   date        DateTime
   dueDate     DateTime
@@ -100,11 +127,13 @@ model SalesInvoice {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  client Tier @relation(fields: [clientId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  client Tier   @relation(fields: [clientId], references: [id])
 }
 
 model PurchaseInvoice {
   id          String   @id @default(uuid())
+  tenantId    String
   number      String
   date        DateTime
   dueDate     DateTime
@@ -118,11 +147,13 @@ model PurchaseInvoice {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  supplier Tier @relation(fields: [supplierId], references: [id])
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  supplier Tier   @relation(fields: [supplierId], references: [id])
 }
 
 model SalesQuote {
   id          String   @id @default(uuid())
+  tenantId    String
   number      String
   date        DateTime
   expiryDate  DateTime
@@ -136,41 +167,47 @@ model SalesQuote {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  client Tier @relation(fields: [clientId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  client Tier   @relation(fields: [clientId], references: [id])
 }
 
 model PurchaseOrder {
-  id          String   @id @default(uuid())
-  number      String
-  date        DateTime
+  id           String   @id @default(uuid())
+  tenantId     String
+  number       String
+  date         DateTime
   deliveryDate DateTime?
-  supplierId  String
-  status      String   // 'draft', 'sent', 'received', 'cancelled'
-  subtotal    Float
-  taxAmount   Float
-  totalAmount Float
-  notes       String?
-  items       String   // JSON string
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  supplierId   String
+  status       String    // 'draft', 'sent', 'received', 'cancelled'
+  subtotal     Float
+  taxAmount    Float
+  totalAmount  Float
+  notes        String?
+  items        String    // JSON string
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  supplier Tier @relation(fields: [supplierId], references: [id])
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  supplier Tier   @relation(fields: [supplierId], references: [id])
 }
 
 model CompanySettings {
-  id            String   @id @default("default") // Single row table essentially
-  name          String
-  address       String?
-  phone         String?
-  email         String?
-  website       String?
-  taxId         String?
-  tradeReg      String?
-  nis           String?
-  art           String?
-  logo          String?
-  currency      String   @default("DZD")
-  fiscalYearStartMonth Int @default(1)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                   String   @id @default(uuid())
+  tenantId             String
+  name                 String
+  address              String?
+  phone                String?
+  email                String?
+  website              String?
+  taxId                String?
+  tradeReg             String?
+  nis                  String?
+  art                  String?
+  logo                 String?
+  currency             String   @default("DZD")
+  fiscalYearStartMonth Int      @default(1)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 }

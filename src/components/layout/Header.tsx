@@ -22,6 +22,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { OrgSwitcher } from './OrgSwitcher'
+import { NotificationMenu } from './NotificationMenu'
 import { useAuth } from '@/lib/auth-store'
 import {
   DropdownMenu,
@@ -52,10 +53,10 @@ export const Header = ({
 
   const userInitials = user?.name
     ? user.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
     : 'US'
 
   return (
@@ -128,14 +129,7 @@ export const Header = ({
           </div>
 
           {/* Notifications */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative text-muted-foreground"
-          >
-            <Icons.Bell className="w-5 h-5" />
-            <span className="absolute top-2 end-2 w-2 h-2 bg-destructive rounded-full border-2 border-background"></span>
-          </Button>
+          <NotificationMenu />
 
           {/* User Profile */}
           <DropdownMenu>
