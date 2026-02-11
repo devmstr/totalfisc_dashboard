@@ -83,7 +83,8 @@
       "liability": "خصوم",
       "equity": "رؤوس أموال",
       "revenue": "منتجات",
-      "expense": "أعباء"
+      "expense": "أعباء",
+      "balance_sheet": "الميزانية"
     }
   },
   "fiscal_years": {
@@ -176,6 +177,8 @@
     "vat": "الرسم على القيمة المضافة",
     "amount_ttc": "المبلغ مع الضريبة",
     "status": "الحالة",
+    "draft": "مسودة",
+    "sent": "مرسل",
     "paid": "مدفوع",
     "unpaid": "غير مدفوع",
     "partial": "جزئي",
@@ -196,9 +199,12 @@
     "vat": "الرسم على القيمة المضافة",
     "amount_ttc": "المبلغ مع الضريبة",
     "status": "الحالة",
+    "draft": "مسودة",
+    "received": "استلمت",
     "paid": "مدفوع",
     "unpaid": "غير مدفوع",
     "partial": "جزئي",
+    "overdue": "متأخر",
     "total_purchases": "مجموع المشتريات"
   },
   "tiers": {
