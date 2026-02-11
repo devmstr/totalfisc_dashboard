@@ -27,7 +27,9 @@ import {
   ArrowRight,
   Unlock,
   Loader2,
-  CheckCircle
+  CheckCircle,
+  User,
+  LogOut
 } from 'lucide-react'
 import { TbFileStack } from 'react-icons/tb'
 
@@ -61,7 +63,9 @@ export const Icons = {
   Unlock,
   ArrowRight,
   Loader2,
-  CheckCircle
+  CheckCircle,
+  User,
+  LogOut
 }
 
 export type IconType = keyof typeof Icons

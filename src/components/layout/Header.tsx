@@ -22,6 +22,15 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { OrgSwitcher } from './OrgSwitcher'
+import { useAuth } from '@/lib/auth-store'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '../ui/dropdown-menu'
 
 import { cn } from '@/lib/utils'
 
@@ -39,6 +48,15 @@ export const Header = ({
   const { t } = useTranslation()
   const { language, toggleLanguage } = useI18n()
   const { theme, setTheme } = useTheme()
+  const { user, logout } = useAuth()
+
+  const userInitials = user?.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+    : 'US'
 
   return (
     <header
@@ -91,7 +109,12 @@ export const Header = ({
             className="text-muted-foreground hover:text-foreground"
           >
             <Icons.Globe className="w-4 h-4 me-2" />
-            <span className="text-xs font-bold uppercase">{language}</span>
+            <span
+              suppressHydrationWarning
+              className="text-xs font-bold uppercase"
+            >
+              {language}
+            </span>
           </Button>
 
           {/* Search */}
@@ -115,12 +138,45 @@ export const Header = ({
           </Button>
 
           {/* User Profile */}
-          <Avatar className="w-9 h-9 border border-border cursor-pointer hover:ring-2 hover:ring-ring transition-all">
-            <AvatarImage src="/placeholder-user.jpg" />
-            <AvatarFallback className="bg-primary text-primary-foreground font-medium">
-              IS
-            </AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="w-9 h-9 border border-border cursor-pointer hover:ring-2 hover:ring-ring transition-all">
+                <AvatarImage src="/placeholder-user.jpg" />
+                <AvatarFallback className="bg-primary text-primary-foreground font-medium">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {user?.name}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.email}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <Icons.User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Icons.Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => logout()}
+                className="text-destructive focus:text-destructive"
+              >
+                <Icons.LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
