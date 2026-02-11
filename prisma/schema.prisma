@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id            String   @id @default(uuid())
+  accountNumber String
+  label         String
+  isSummary     Boolean  @default(false)
+  isAuxiliary   Boolean  @default(false)
+  class         Int?     // For tracking account classes (1-7)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  journalLines JournalLine[]
+}
+
+model FiscalYear {
+  id        String   @id @default(uuid())
+  year      Int
+  startDate DateTime
+  endDate   DateTime
+  status    String   // 'Open', 'Closed'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  journalEntries JournalEntry[]
+}
+
+model Tier {
+  id           String   @id @default(uuid())
+  name         String
+  type         String   // 'client', 'supplier', 'both'
+  taxId        String?
+  tradeReg     String?
+  address      String?
+  phone        String?
+  email        String?
+  website      String?
+  notes        String?
+  activity     String?
+  nis          String?  // Numéro d'Identification Statistique
+  art          String?  // Article d'imposition
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  salesInvoices    SalesInvoice[]
+  purchaseInvoices PurchaseInvoice[]
+  salesQuotes      SalesQuote[]
+  purchaseOrders   PurchaseOrder[]
+  journalLines     JournalLine[]
+}
+
+model JournalEntry {
+  id           String   @id @default(uuid())
+  date         DateTime
+  journalCode  String
+  reference    String
+  description  String
+  status       String   // 'draft', 'posted'
+  fiscalYearId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  fiscalYear FiscalYear    @relation(fields: [fiscalYearId], references: [id])
+  lines      JournalLine[]
+}
+
+model JournalLine {
+  id             String @id @default(uuid())
+  journalEntryId String
+  accountId      String
+  thirdPartyId   String?
+  label          String
+  debit          Float  @default(0)
+  credit         Float  @default(0)
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account      Account      @relation(fields: [accountId], references: [id])
+  thirdParty   Tier?        @relation(fields: [thirdPartyId], references: [id])
+}
+
+model SalesInvoice {
+  id          String   @id @default(uuid())
+  number      String
+  date        DateTime
+  dueDate     DateTime
+  clientId    String
+  status      String   // 'draft', 'sent', 'paid', 'overdue', 'partial'
+  subtotal    Float
+  taxAmount   Float
+  totalAmount Float
+  notes       String?
+  items       String   // JSON string for line items (keeping simple for now)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client Tier @relation(fields: [clientId], references: [id])
+}
+
+model PurchaseInvoice {
+  id          String   @id @default(uuid())
+  number      String
+  date        DateTime
+  dueDate     DateTime
+  supplierId  String
+  status      String   // 'draft', 'received', 'paid', 'overdue'
+  subtotal    Float
+  taxAmount   Float
+  totalAmount Float
+  notes       String?
+  items       String   // JSON string
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  supplier Tier @relation(fields: [supplierId], references: [id])
+}
+
+model SalesQuote {
+  id          String   @id @default(uuid())
+  number      String
+  date        DateTime
+  expiryDate  DateTime
+  clientId    String
+  status      String   // 'draft', 'sent', 'accepted', 'rejected'
+  subtotal    Float
+  taxAmount   Float
+  totalAmount Float
+  notes       String?
+  items       String   // JSON string
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client Tier @relation(fields: [clientId], references: [id])
+}
+
+model PurchaseOrder {
+  id          String   @id @default(uuid())
+  number      String
+  date        DateTime
+  deliveryDate DateTime?
+  supplierId  String
+  status      String   // 'draft', 'sent', 'received', 'cancelled'
+  subtotal    Float
+  taxAmount   Float
+  totalAmount Float
+  notes       String?
+  items       String   // JSON string
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  supplier Tier @relation(fields: [supplierId], references: [id])
+}
+
+model CompanySettings {
+  id            String   @id @default("default") // Single row table essentially
+  name          String
+  address       String?
+  phone         String?
+  email         String?
+  website       String?
+  taxId         String?
+  tradeReg      String?
+  nis           String?
+  art           String?
+  logo          String?
+  currency      String   @default("DZD")
+  fiscalYearStartMonth Int @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
