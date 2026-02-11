@@ -1,0 +1,17 @@
+# Dependencies
+node_modules
+
+# Prisma
+prisma/migrations
+
+# Scripts
+scripts
+
+# Backend (if not needed for frontend)
+backend
+
+# Environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
