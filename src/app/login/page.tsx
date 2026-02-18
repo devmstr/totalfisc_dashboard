@@ -19,8 +19,8 @@ import {
 import { Label } from '@/components/ui/label'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('admin@example.com')
-  const [password, setPassword] = useState('admin')
+  const [email, setEmail] = useState<string>()
+  const [password, setPassword] = useState<string>()
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const router = useRouter()
@@ -131,8 +131,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-
         </CardContent>
 
         <CardFooter className="pb-8 justify-center">

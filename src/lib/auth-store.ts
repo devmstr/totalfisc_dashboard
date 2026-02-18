@@ -10,7 +10,10 @@ interface User {
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<boolean>
+  login: (
+    email: string | undefined,
+    password: string | undefined
+  ) => Promise<boolean>
   logout: () => void
 }
 
