@@ -132,14 +132,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800">
-            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-4 flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700/50">
-              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              <span>
-                Demo Mode: Use <b>admin@example.com</b> / <b>admin</b>
-              </span>
-            </div>
-          </div>
+
         </CardContent>
 
         <CardFooter className="pb-8 justify-center">

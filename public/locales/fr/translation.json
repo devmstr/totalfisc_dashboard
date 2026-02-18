@@ -83,7 +83,8 @@
       "liability": "Passif",
       "equity": "Capitaux",
       "revenue": "Produits",
-      "expense": "Charges"
+      "expense": "Charges",
+      "balance_sheet": "Bilan"
     }
   },
   "fiscal_years": {
@@ -176,6 +177,8 @@
     "vat": "TVA",
     "amount_ttc": "Montant TTC",
     "status": "Statut",
+    "draft": "Brouillon",
+    "sent": "Envoyé",
     "paid": "Payé",
     "unpaid": "Impayé",
     "partial": "Partiel",
@@ -196,8 +199,11 @@
     "vat": "TVA",
     "amount_ttc": "Montant TTC",
     "status": "Statut",
+    "draft": "Brouillon",
+    "received": "Reçu",
     "paid": "Payé",
     "unpaid": "Impayé",
+    "overdue": "En retard",
     "partial": "Partiel",
     "total_purchases": "Total achats"
   },
